@@ -24,7 +24,6 @@ bg_playagain_1.pos = (505,450)
 
 # thêm chuột và vị trí lần đầu tiên xuất hiện
 mouse = Actor('mouse_0')
-mouse.pos = (random.randint(100,900),random.randint(100,500))
 
 #cài đặt thời gian chơi game
 choose_time = Actor('time')
@@ -81,7 +80,10 @@ def mouse_location():
             Vị trí chuột xuất hiện ngẫu nhiên sau 1,5s
     """
     mouse.image = 'mouse_0' 
-    mouse.pos = (random.randint(100,900),random.randint(100,500))
+    if not star_game and not game_over:
+        mouse.pos = (5000,5000)
+    else:
+        mouse.pos = (random.randint(100,900),random.randint(100,500))
 clock.schedule_interval(mouse_location, 1.5)    
 
 
@@ -114,7 +116,7 @@ def on_mouse_move():
     else:
         bg_start.image = 'start_0'
 
-    if bg_playagain.colliderect(player):        #thay hình chữ Play Again
+    if bg_playagain.collidepoint(mouse_x, mouse_y):        #thay hình chữ Play Again
         bg_playagain.image = 'playagain_1'
     else:
         bg_playagain.image = 'playagain_0'
@@ -138,12 +140,12 @@ def on_mouse_move():
         down_target_0.image = 'tru_target_1' 
     else: 
         down_target_0.image = 'tru_target_0'
-
+    
 #khai báo time,target,score
 time_up = 0
 target = 0
 score = 0
-def on_mouse_down():
+def on_mouse_down(pos):
     """
         input: 
             Các đối tượng cần kiểm tra khi click (chuột, búa và các nút điều khiển trong game)
@@ -163,21 +165,21 @@ def on_mouse_down():
         sound = pygame.mixer.Sound('sounds/hammering.wav')
         sound.play()
     
-    if up_time_1.colliderect(player):
+    if up_time_1.collidepoint(pos):
         time_up+=5
-    if down_time_1.colliderect(player):
+    if down_time_1.collidepoint(pos):
         time_up-=5
         if time_up <=0:
             time_up = 0
     
-    if up_target_1.colliderect(player):
+    if up_target_1.collidepoint(pos):
         target+=1
-    if down_target_1.colliderect(player):
+    if down_target_1.collidepoint(pos):
         target-=1
         if target <=0:
             target = 0
             
-    if bg_start_1.colliderect(player) and time_up > 0 and target > 0: #bắt đầu chơi theo thời gian đã chọn
+    if bg_start_1.collidepoint(pos) and time_up > 0 and target > 0: #bắt đầu chơi theo thời gian đã chọn
         star_game = True
         game_over = False
         time_count_down = time_up
@@ -188,7 +190,7 @@ def on_mouse_down():
         up_target_1.move_ip(10000,10000)
         down_target_1.move_ip(10000,10000)
     
-    if bg_start_1.colliderect(player) and time_up == 0 and target == 0:  #mặc định cho game khi ko chọn thời gian là 20s
+    if bg_start_1.collidepoint(pos) and time_up == 0 and target == 0:  #mặc định cho game khi ko chọn thời gian là 20s
         star_game = True
         game_over = False
         score = 0
@@ -199,7 +201,7 @@ def on_mouse_down():
         up_target_1.move_ip(10000,10000)
         down_target_1.move_ip(10000,10000)
         
-    if bg_playagain_1.colliderect(player) and time_up > 0 and target > 0: # khi click vào chữ Play again để chơi lại
+    if bg_playagain_1.collidepoint(pos) and time_up > 0 and target > 0: # khi click vào chữ Play again để chơi lại
         star_game = True
         game_over = False
         score = 0
@@ -210,8 +212,8 @@ def on_mouse_down():
         up_target_1.move_ip(10000,10000)
         down_target_1.move_ip(10000,10000)
 
-
 time_count_down = -2
+result_game = -1
 def time():
     """
         input: 
@@ -221,7 +223,7 @@ def time():
             trả về giá trị time_count_down sau mỗi giây
             khi thời gian về 0 thì kết thúc game
     """
-    global time_count_down, game_over
+    global time_count_down, game_over, result_game
     if True:
         time_count_down -=1
         if time_count_down == 10:
@@ -229,13 +231,19 @@ def time():
             sound.play()
     if time_count_down == -1:
         game_over = True
+        if score >= target and score >0 and target >0:
+            result_game = 1
+        elif target == 0 and time_up == 0:
+            result_game = 2
+        else:
+            result_game = 0
 clock.schedule_interval(time, 1)
 
 
 def update():
     """
-        input: 
             Vị trí các nút điều khiển khi kết thúc game
+        input: 
         output: 
             Chuyển vị trí các nút điều khiển ra khỏi màn hình 
             tránh khi click chuột làm thay đổi các thông số
@@ -275,10 +283,10 @@ def draw():
         mouse.draw()
         player.draw()
         screen.draw.text('Score: ' + str(score) ,(100,20), color='yellow', fontsize=60)
-        screen.draw.text('Target: ' + str(target) ,(450,20), color='yellow', fontsize=60)
-        screen.draw.text('Time: ' + str(time_count_down) ,(800,20), color='red', fontsize=60)
+        screen.draw.text('Target: ' + str(target) ,(400,20), color='black', fontsize=60)
+        screen.draw.text('Time ' + str(time_count_down//60) + ':' + str(time_count_down%60) ,(770,20), color='red', fontsize=60)
         
-    if game_over == True: # khi chơi mặc định thì sẽ ko có win hay lose
+    if game_over == True and result_game == 2: # khi chơi mặc định thì sẽ ko có win hay lose
         bg.draw()
         choose_time.draw()
         up_time_0.draw()
@@ -290,8 +298,9 @@ def draw():
         screen.draw.text(str(time_up) ,(570,40), color='red', fontsize=60)
         screen.draw.text(str(target) ,(570,170), color='red', fontsize=60)
         bg_playagain.draw()
+        mouse.pos=(5000,5000)
     
-    if game_over == True and score >= target and score >0 and target > 0:
+    if game_over == True and result_game == 1:
         bg.draw()
         choose_time.draw()
         up_time_0.draw()
@@ -303,8 +312,9 @@ def draw():
         screen.draw.text(str(target) ,(570,170), color='red', fontsize=60)
         win.draw()
         bg_playagain.draw()
+        mouse.pos=(5000,5000)
     
-    if game_over == True and score < target and score >=0 and target > 0:
+    if game_over == True and result_game == 0:
         bg.draw()
         choose_time.draw()
         up_time_0.draw()
@@ -316,5 +326,6 @@ def draw():
         screen.draw.text(str(target) ,(570,170), color='red', fontsize=60)
         lose.draw()
         bg_playagain.draw()
+        mouse.pos=(5000,5000)
 
 pgzrun.go()
